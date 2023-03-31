@@ -102,6 +102,7 @@ s2tData = s2tDataset( ds2, None)
 train_dataloader = DataLoader(s2tData, shuffle=True, batch_size=4,collate_fn=s2tData.collate_fn)
 
 def loss_func(pred,label,mask):
+    #pdb.set_trace()
     logits = F.log_softmax(pred,dim=-1)
     bs = pred.shape[0]
     t_losses = torch.zeros(bs)
@@ -112,9 +113,18 @@ def loss_func(pred,label,mask):
 
 optimizer = optim.AdamW(model.parameters(), lr=1e-5)
 print("begin training")
-for batch_data in train_dataloader:
-    outter2 = model.forward(batch_data[0], decoder_input_ids=batch_data[1], decoder_attention_mask=batch_data[2])
-    loss = loss_func(outter2.cls_logit_out, batch_data[3], batch_data[2])
+
+for epoch in range(10):
+  epoch_loss = 0.0
+  for batch_data in tqdm(train_dataloader):
+      optimizer.zero_grad()
+      outter2 = model.forward(batch_data[0].cuda(), decoder_input_ids=batch_data[1].cuda(), decoder_attention_mask=batch_data[2].cuda())
+      loss = loss_func(outter2.cls_logit_out, batch_data[3].cuda(), batch_data[2].cuda())
+      loss.backward()
+      epoch_loss += loss.detach().cpu().item()
+      optimizer.step()
+  print(epoch_loss)
+
 
 
 exit()
