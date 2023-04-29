@@ -15,6 +15,7 @@ class s2tDataset(Dataset):
         self.dataset = dataset
         self.p = args
         self.processor  = Speech2TextProcessor.from_pretrained("facebook/s2t-small-librispeech-asr")
+        # pylint: disable-next=no-member
         self.tokenizer = self.processor.tokenizer
 
     def __len__(self):
@@ -35,6 +36,7 @@ class s2tDataset(Dataset):
         
         #process audio features side
         #print(type(pre_batch))
+        # pylint: disable-next=no-member
         audio_in = [self.processor.feature_extractor(x["audio"]["array"], sampling_rate = x["audio"]["sampling_rate"],return_tensors="pt")["input_features"] for x in pre_batch ]
         max_audio_feature_len = max([i.shape[1] for i in audio_in])
         bs = len(audio_in)
@@ -87,6 +89,7 @@ model = model.to(device)
 print("here")
 
 processor = Speech2TextProcessor.from_pretrained("facebook/s2t-small-librispeech-asr")
+# pylint: disable-next=no-member
 feature_extractor = processor.feature_extractor 
 #ds = load_dataset("hf-internal-testing/librispeech_asr_dummy", "clean", split="validation")
 ds_train =load_dataset("librispeech_asr", "clean", split="train.100")
