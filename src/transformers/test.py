@@ -4,7 +4,7 @@ from transformers import Speech2TextProcessor, Speech2TextForConditionalGenerati
 from datasets import load_dataset
 from torch.utils.data import Dataset, DataLoader
 import numpy as np
-import tqdm
+from tqdm import tqdm
 import torch.optim as optim
 #from transformers import Speech2TextModel
 #model = Speech2TextModel.from_pretrained("facebook/s2t-small-librispeech-asr")
@@ -88,18 +88,21 @@ print("here")
 
 processor = Speech2TextProcessor.from_pretrained("facebook/s2t-small-librispeech-asr")
 feature_extractor = processor.feature_extractor 
-ds = load_dataset("hf-internal-testing/librispeech_asr_dummy", "clean", split="validation")
-ds2 =load_dataset("librispeech_asr", "clean", split="validation")
+#ds = load_dataset("hf-internal-testing/librispeech_asr_dummy", "clean", split="validation")
+ds_train =load_dataset("librispeech_asr", "clean", split="train.100")
+ds_validate =load_dataset("librispeech_asr", "clean", split="validation")
 
 
 
-s2tData = s2tDataset( ds2, None)
+s2tData = s2tDataset( ds_train, None)
+valData = s2tDataset( ds_validate, None)
 
 #tester  = ds2[:10]
 #test_data = s2tData.collate_fn(tester)
 #outter2 = model.forward(test_data[0], decoder_input_ids=test_data[1], decoder_attention_mask=test_data[2])
 
-train_dataloader = DataLoader(s2tData, shuffle=True, batch_size=4,collate_fn=s2tData.collate_fn)
+train_dataloader = DataLoader(s2tData, shuffle=True, batch_size=24,collate_fn=s2tData.collate_fn)
+val_dataloader = DataLoader(valData, shuffle=False, batch_size=24,collate_fn=s2tData.collate_fn)
 
 def loss_func(pred,label,mask):
     #pdb.set_trace()
@@ -116,14 +119,24 @@ print("begin training")
 
 for epoch in range(10):
   epoch_loss = 0.0
+  v_epoch_loss = 0.0
   for batch_data in tqdm(train_dataloader):
-      optimizer.zero_grad()
-      outter2 = model.forward(batch_data[0].cuda(), decoder_input_ids=batch_data[1].cuda(), decoder_attention_mask=batch_data[2].cuda())
-      loss = loss_func(outter2.cls_logit_out, batch_data[3].cuda(), batch_data[2].cuda())
-      loss.backward()
-      epoch_loss += loss.detach().cpu().item()
-      optimizer.step()
+    optimizer.zero_grad()
+    outter2 = model.forward(batch_data[0].cuda(), decoder_input_ids=batch_data[1].cuda(), decoder_attention_mask=batch_data[2].cuda())
+    loss = loss_func(outter2.cls_logit_out, batch_data[3].cuda(), batch_data[2].cuda())
+    loss.backward()
+    epoch_loss += loss.detach().cpu().item()
+    optimizer.step()
+  for val_data in tqdm(val_dataloader):
+    optimizer.zero_grad()
+    #print("i need to know about data")
+    voutputs = model.forward(val_data[0].cuda().detach(), decoder_input_ids=val_data[1].cuda().detach(), decoder_attention_mask=val_data[2].cuda().detach())
+    #voutputs = voutputs.detach()
+    vloss = loss_func(voutputs.cls_logit_out, val_data[3].cuda(), val_data[2].cuda())
+    v_epoch_loss += vloss
   print(epoch_loss)
+  print(epoch_loss/len(train_dataloader))
+  print(v_epoch_loss/len(val_dataloader))
 
 
 

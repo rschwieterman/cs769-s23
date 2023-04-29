@@ -8,7 +8,8 @@ import pdb
 class customs2t(nn.Module):
     def __init__(self,config=None):
         super().__init__()
-        self.transformer = Speech2TextModel.from_pretrained("facebook/s2t-small-librispeech-asr")
+        stolen_config = Speech2TextModel.from_pretrained("facebook/s2t-small-librispeech-asr").config
+        self.transformer = Speech2TextModel(stolen_config)
         self.lm_head = Speech2TextForConditionalGeneration.from_pretrained("facebook/s2t-small-librispeech-asr").lm_head
         print("done")
 
