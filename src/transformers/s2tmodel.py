@@ -5,7 +5,7 @@ from transformers import Speech2TextModel, Speech2TextForConditionalGeneration
 import pdb
 
 
-class customs2t(nn.Module):
+class CustomS2T(nn.Module):
     def __init__(self,config=None):
         super().__init__()
         stolen_config = Speech2TextModel.from_pretrained("facebook/s2t-small-librispeech-asr").config
