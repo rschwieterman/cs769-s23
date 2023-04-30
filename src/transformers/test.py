@@ -64,14 +64,14 @@ for epoch in range(10):
         loss.backward()
         epoch_loss += loss.detach().cpu().item()
         optimizer.step()
-   with torch.no_grad():
-    for val_data in tqdm(val_dataloader):
-        optimizer.zero_grad()
-        #print("i need to know about data")
-        voutputs = model.forward(val_data[0].to(device).detach(), decoder_input_ids=val_data[1].to(device).detach(), decoder_attention_mask=val_data[2].to(device).detach())
-        #voutputs = voutputs.detach()
-        vloss = loss_func(voutputs.cls_logit_out, val_data[3].to(device), val_data[2].to(device))
-        v_epoch_loss += vloss.detach().cpu().item()
+    with torch.no_grad():
+        for val_data in tqdm(val_dataloader):
+            optimizer.zero_grad()
+            #print("i need to know about data")
+            voutputs = model.forward(val_data[0].to(device).detach(), decoder_input_ids=val_data[1].to(device).detach(), decoder_attention_mask=val_data[2].to(device).detach())
+            #voutputs = voutputs.detach()
+            vloss = loss_func(voutputs.cls_logit_out, val_data[3].to(device), val_data[2].to(device))
+            v_epoch_loss += vloss.detach().cpu().item()
     print(epoch_loss)
     print(epoch_loss/len(train_dataloader))
     print(v_epoch_loss/len(val_dataloader))

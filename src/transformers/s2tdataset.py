@@ -1,16 +1,22 @@
+import numpy as np
+import torch
 from torch.utils.data import Dataset
 from transformers import Speech2TextProcessor
-import torch
-import numpy as np
 
 
 class S2TDataset(Dataset):
-    def __init__(self, dataset, args):
+    default_keywords = ["up", "down", "left", "right", "yes", "no", "on", "off", "go", "stop"]
+
+    def __init__(self, dataset, args, keywords=None):
         self.dataset = dataset
         self.p = args
         self.processor = Speech2TextProcessor.from_pretrained("facebook/s2t-small-librispeech-asr")
         # pylint: disable-next=no-member
         self.tokenizer = self.processor.tokenizer
+
+        if keywords is None:
+            keywords = S2TDataset.default_keywords
+        self.keyword_ids = np.array(list(self.tokenizer(keyword)["input_ids"][0] for keyword in keywords))
 
     def __len__(self):
         return len(self.dataset)
@@ -51,6 +57,8 @@ class S2TDataset(Dataset):
         sent_in = [self.tokenizer(x["text"])["input_ids"] for x in pre_batch]
         # self.tokenizer(pre_batch['text'],padding=True)
 
+        keywords_tensor = np.array(list(list(keyword_id in sent for keyword_id in self.keyword_ids) for sent in sent_in), dtype=int)
+
         padding_id = 1
 
         cutoffs = [np.random.randint(0, len(x) - 1) for x in sent_in]
@@ -71,4 +79,10 @@ class S2TDataset(Dataset):
             label_sents_tensor[i, : len(x)] = torch.tensor(label_sents[i])
             mask_in_tensor[i, : len(x)] = 1
 
-        return audio_tensor, sent_tokens_in_tensor.long(), mask_in_tensor, label_sents_tensor.long()
+        return (
+            audio_tensor,
+            sent_tokens_in_tensor.long(),
+            mask_in_tensor,
+            label_sents_tensor.long(),
+            keywords_tensor,
+        )
