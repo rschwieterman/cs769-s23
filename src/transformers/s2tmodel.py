@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from transformers import Speech2TextModel, Speech2TextForConditionalGeneration
+from transformers.models.speech_to_text.modeling_speech_to_text import Speech2TextAttention
 import pdb
 
 
