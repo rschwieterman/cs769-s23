@@ -59,7 +59,7 @@ class S2TDataset(Dataset):
 
         keywords_tensor = np.array(list(list(keyword_id in sent for keyword_id in self.keyword_ids) for sent in sent_in), dtype=int)
 
-        padding_id = 1
+        padding_id = self.tokenizer(text="<pad>")["input_ids"][0]
 
         cutoffs = [np.random.randint(0, len(x) - 1) for x in sent_in]
         input_sents = []
