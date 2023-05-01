@@ -18,7 +18,7 @@ class CustomS2T(nn.Module):
         self.keyword_head = nn.Sequential(nn.Linear(self.n_keywords * 256, 512 ), nn.ReLU(),
                                           nn.Linear(512,256), nn.ReLU(),
                                           nn.Linear(256, self.n_keywords ))
-        self.keyword_mode = False
+        self.keyword_mode = True
         print("done")
 
     def train(self):
@@ -41,10 +41,12 @@ class CustomS2T(nn.Module):
         #print("forward")
         y = self.transformer(input_features=x, decoder_input_ids = decoder_input_ids, decoder_attention_mask = decoder_attention_mask)
         cls_logit_out = self.lm_head(y.last_hidden_state)
+        bs = x.shape[0]
         if self.keyword_mode:
-            key_detect = self.extra_encoder_head(self.keyword_keys.reshape(1,10,256).repeat(24,1,1) , key_value_states=y.encoder_last_hidden_state)
+            key_detect = self.extra_encoder_head(self.keyword_keys.reshape(1,10,256).repeat(bs,1,1) , key_value_states=y.encoder_last_hidden_state)
             key_detect = key_detect[0]
             key_detect = self.keyword_head(key_detect.reshape(key_detect.shape[0], -1))
         
         y['cls_logit_out'] = cls_logit_out
+        y['key_detect'] = key_detect
         return y
